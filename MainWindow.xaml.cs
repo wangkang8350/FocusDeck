@@ -3,7 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 using Forms = System.Windows.Forms;
 using WpfBrushes = System.Windows.Media.Brushes;
 using WpfButton = System.Windows.Controls.Button;
@@ -16,8 +18,10 @@ namespace FocusDeck;
 public partial class MainWindow : Window
 {
     private const int WmHotKey = 0x0312;
+    private const uint ProcessQueryLimitedInformation = 0x1000;
     private readonly Dictionary<int, AppShortcut> hotkeys = [];
     private readonly List<ApplicationRow> rows = [];
+    private readonly List<ProcessCandidate> processCandidates = [];
     private readonly Forms.NotifyIcon trayIcon;
     private Settings settings = Settings.Default();
     private HwndSource? hwndSource;
@@ -98,6 +102,7 @@ public partial class MainWindow : Window
 
     private void Render()
     {
+        RefreshProcessCandidates();
         ApplicationsPanel.Children.Clear();
         rows.Clear();
         foreach (var app in settings.Applications)
@@ -161,12 +166,24 @@ public partial class MainWindow : Window
         form.RowDefinitions.Add(new RowDefinition());
 
         row.ShortcutBox = CreateTextBox(row.Model.Shortcut, "例如：Alt+Z");
+        row.ShortcutBox.PreviewKeyDown += (_, e) => CaptureShortcut(row.ShortcutBox, e);
+        row.ShortcutBox.PreviewTextInput += (_, e) => e.Handled = true;
+        row.ShortcutBox.GotKeyboardFocus += (_, _) => row.ShortcutBox.SelectAll();
         AddField(form, "唤起快捷键", row.ShortcutBox, 0, 0);
 
-        row.ProcessBox = CreateTextBox(row.Model.ProcessName, "例如：Codex");
+        row.ProcessBox = CreateProcessComboBox(row);
         AddField(form, "进程名称", row.ProcessBox, 0, 1);
 
-        row.TypeBox = new WpfComboBox { MinHeight = 44, Margin = new Thickness(8, 7, 0, 0), Background = Brush("#383838"), Foreground = Brush("#F2F2F4"), BorderBrush = Brush("#424242"), Padding = new Thickness(12, 8, 12, 8) };
+        row.TypeBox = new WpfComboBox
+        {
+            MinHeight = 44,
+            Margin = new Thickness(8, 7, 0, 0),
+            Background = Brush("#383838"),
+            Foreground = Brush("#F2F2F4"),
+            BorderBrush = Brush("#424242"),
+            Padding = new Thickness(12, 8, 34, 8),
+            FontSize = 15
+        };
         row.TypeBox.Items.Add("桌面程序（exe）");
         row.TypeBox.Items.Add("商店应用（应用 ID）");
         row.TypeBox.SelectedIndex = row.Model.LaunchType == "shellApp" ? 1 : 0;
@@ -225,6 +242,121 @@ public partial class MainWindow : Window
         };
     }
 
+    private WpfComboBox CreateProcessComboBox(ApplicationRow row)
+    {
+        var combo = new WpfComboBox
+        {
+            IsEditable = true,
+            IsTextSearchEnabled = true,
+            ItemsSource = processCandidates,
+            Text = row.Model.ProcessName,
+            ToolTip = "选择当前正在运行的窗口，或手动输入进程名",
+            MinHeight = 44,
+            FontSize = 15,
+            Background = Brush("#383838"),
+            Foreground = Brush("#F2F2F4"),
+            BorderBrush = Brush("#424242"),
+            Padding = new Thickness(12, 8, 34, 8),
+            Margin = new Thickness(8, 7, 8, 0)
+        };
+
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (combo.SelectedItem is ProcessCandidate candidate)
+            {
+                ApplyProcessCandidate(row, candidate);
+            }
+        };
+
+        combo.DropDownOpened += (_, _) =>
+        {
+            RefreshProcessCandidates();
+            combo.ItemsSource = null;
+            combo.ItemsSource = processCandidates;
+        };
+
+        return combo;
+    }
+
+    private void ApplyProcessCandidate(ApplicationRow row, ProcessCandidate candidate)
+    {
+        row.ProcessBox.Text = candidate.ProcessName;
+        row.Model.ProcessName = candidate.ProcessName;
+
+        if (!string.IsNullOrWhiteSpace(candidate.LaunchTarget))
+        {
+            row.TargetBox.Text = candidate.LaunchTarget;
+            row.TypeBox.SelectedIndex = candidate.LaunchType == "shellApp" ? 1 : 0;
+        }
+
+        if (string.IsNullOrWhiteSpace(row.NameBox.Text) || row.NameBox.Text == "新程序")
+        {
+            row.NameBox.Text = string.IsNullOrWhiteSpace(candidate.WindowTitle) ? candidate.ProcessName : candidate.WindowTitle;
+        }
+    }
+
+    private static void CaptureShortcut(WpfTextBox target, System.Windows.Input.KeyEventArgs e)
+    {
+        e.Handled = true;
+
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key == Key.ImeProcessed)
+        {
+            key = e.ImeProcessedKey;
+        }
+
+        if (key is Key.LeftAlt or Key.RightAlt or Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin)
+        {
+            return;
+        }
+
+        if (key == Key.Back || key == Key.Delete || key == Key.Escape)
+        {
+            target.Text = "";
+            return;
+        }
+
+        var parts = new List<string>();
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        {
+            parts.Add("Ctrl");
+        }
+        if ((Keyboard.Modifiers & ModifierKeys.Alt) != 0)
+        {
+            parts.Add("Alt");
+        }
+        if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            parts.Add("Shift");
+        }
+        if ((Keyboard.Modifiers & ModifierKeys.Windows) != 0)
+        {
+            parts.Add("Win");
+        }
+
+        parts.Add(KeyToShortcutText(key));
+        target.Text = string.Join("+", parts);
+        target.CaretIndex = target.Text.Length;
+    }
+
+    private static string KeyToShortcutText(Key key)
+    {
+        return key switch
+        {
+            >= Key.A and <= Key.Z => key.ToString(),
+            >= Key.D0 and <= Key.D9 => key.ToString()[1..],
+            >= Key.NumPad0 and <= Key.NumPad9 => "Num" + key.ToString()[^1],
+            Key.Space => "Space",
+            Key.Return => "Enter",
+            Key.Escape => "Esc",
+            Key.OemPlus => "=",
+            Key.OemMinus => "-",
+            Key.OemComma => ",",
+            Key.OemPeriod => ".",
+            _ => key.ToString()
+        };
+    }
+
     private static void AddField(Grid form, string label, FrameworkElement control, int row, int column)
     {
         var panel = new StackPanel { Margin = new Thickness(column == 0 ? 0 : 8, 0, 0, 0) };
@@ -233,6 +365,104 @@ public partial class MainWindow : Window
         Grid.SetRow(panel, row);
         Grid.SetColumn(panel, column);
         form.Children.Add(panel);
+    }
+
+    private void RefreshProcessCandidates()
+    {
+        var candidates = new Dictionary<string, ProcessCandidate>(StringComparer.OrdinalIgnoreCase);
+
+        PInvoke.EnumWindows((windowHandle, _) =>
+        {
+            if (!PInvoke.IsWindowVisible(windowHandle) || PInvoke.GetWindowTextLength(windowHandle) == 0)
+            {
+                return true;
+            }
+
+            PInvoke.GetWindowThreadProcessId(windowHandle, out var processId);
+            try
+            {
+                using var process = Process.GetProcessById((int)processId);
+                var processName = process.ProcessName;
+                var title = GetWindowTitle(windowHandle);
+                var appId = GetApplicationUserModelId(processId);
+                var executablePath = GetExecutablePath(process);
+                var launchType = string.IsNullOrWhiteSpace(appId) ? "executable" : "shellApp";
+                var launchTarget = launchType == "shellApp" ? appId : executablePath;
+                var key = string.IsNullOrWhiteSpace(appId) ? processName : appId;
+
+                if (!candidates.ContainsKey(key))
+                {
+                    candidates[key] = new ProcessCandidate
+                    {
+                        DisplayName = string.IsNullOrWhiteSpace(title) ? processName : $"{title}  ·  {processName}",
+                        ProcessName = processName,
+                        LaunchType = launchType,
+                        LaunchTarget = launchTarget,
+                        WindowTitle = title
+                    };
+                }
+            }
+            catch
+            {
+                // Some elevated/system windows cannot be queried from a normal user process.
+            }
+
+            return true;
+        }, IntPtr.Zero);
+
+        processCandidates.Clear();
+        processCandidates.AddRange(candidates.Values.OrderBy(item => item.ProcessName).ThenBy(item => item.WindowTitle));
+    }
+
+    private static string GetWindowTitle(IntPtr windowHandle)
+    {
+        var length = PInvoke.GetWindowTextLength(windowHandle);
+        if (length <= 0)
+        {
+            return "";
+        }
+
+        var builder = new StringBuilder(length + 1);
+        PInvoke.GetWindowText(windowHandle, builder, builder.Capacity);
+        return builder.ToString();
+    }
+
+    private static string GetApplicationUserModelId(uint processId)
+    {
+        var handle = PInvoke.OpenProcess(ProcessQueryLimitedInformation, false, processId);
+        if (handle == IntPtr.Zero)
+        {
+            return "";
+        }
+
+        try
+        {
+            uint length = 0;
+            _ = PInvoke.GetApplicationUserModelId(handle, ref length, null);
+            if (length == 0)
+            {
+                return "";
+            }
+
+            var builder = new StringBuilder((int)length);
+            return PInvoke.GetApplicationUserModelId(handle, ref length, builder) == 0 ? builder.ToString() : "";
+        }
+        finally
+        {
+            PInvoke.CloseHandle(handle);
+        }
+    }
+
+    private static string GetExecutablePath(Process process)
+    {
+        try
+        {
+            return process.MainModule?.FileName ?? "";
+        }
+        catch
+        {
+            return "";
+        }
     }
 
     private void BrowseExecutable(ApplicationRow row)
@@ -404,7 +634,7 @@ public partial class MainWindow : Window
         public AppShortcut Model { get; } = model;
         public WpfTextBox NameBox { get; set; } = null!;
         public WpfTextBox ShortcutBox { get; set; } = null!;
-        public WpfTextBox ProcessBox { get; set; } = null!;
+        public WpfComboBox ProcessBox { get; set; } = null!;
         public WpfComboBox TypeBox { get; set; } = null!;
         public TextBlock TargetLabel { get; set; } = null!;
         public WpfTextBox TargetBox { get; set; } = null!;

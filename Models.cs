@@ -38,6 +38,17 @@ public sealed class AppShortcut
     public bool StartIfNotRunning { get; set; } = true;
 }
 
+public sealed class ProcessCandidate
+{
+    public string DisplayName { get; init; } = "";
+    public string ProcessName { get; init; } = "";
+    public string LaunchType { get; init; } = "executable";
+    public string LaunchTarget { get; init; } = "";
+    public string WindowTitle { get; init; } = "";
+
+    public override string ToString() => DisplayName;
+}
+
 public static class SettingsStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
