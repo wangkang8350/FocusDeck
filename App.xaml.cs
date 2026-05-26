@@ -24,6 +24,7 @@ public partial class App : System.Windows.Application
         }
 
         mainWindow = new MainWindow();
+        mainWindow.Loaded += async (_, _) => await UpdateChecker.CheckAsync(mainWindow);
         StartPipeServer();
         if (!e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase))
         {
