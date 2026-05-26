@@ -194,8 +194,8 @@ public partial class MainWindow : Window
         form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(330) });
         form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(158) });
-        form.RowDefinitions.Add(new RowDefinition());
-        form.RowDefinitions.Add(new RowDefinition());
+        form.RowDefinitions.Add(new RowDefinition { Height = new GridLength(90) });
+        form.RowDefinitions.Add(new RowDefinition { Height = new GridLength(84) });
 
         row.ShortcutBox = CreateTextBox(row.Model.Shortcut, "例如：Alt+Z");
         row.ShortcutBox.PreviewKeyDown += (_, e) => CaptureShortcut(row.ShortcutBox, e);
@@ -224,7 +224,7 @@ public partial class MainWindow : Window
 
         row.TargetLabel = new TextBlock { Text = row.Model.LaunchType == "shellApp" ? "应用 ID" : "程序路径", Foreground = Brush("#B8C0CC"), FontSize = 18 };
         row.TargetBox = CreateTextBox(row.Model.LaunchTarget, "");
-        var targetPanel = new StackPanel { Margin = new Thickness(0, 20, 0, 0) };
+        var targetPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 0) };
         targetPanel.Children.Add(row.TargetLabel);
         var targetGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
         targetGrid.ColumnDefinitions.Add(new ColumnDefinition());
