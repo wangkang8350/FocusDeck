@@ -118,44 +118,37 @@ public partial class MainWindow : Window
     {
         var card = new Border
         {
-            Width = 1362,
             Height = 298,
             Background = Brush("#D9141A22"),
             BorderBrush = Brush("#2B3542"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(7),
-            Padding = new Thickness(28, 26, 26, 22),
-            Margin = new Thickness(0, 0, 0, 0)
+            Margin = new Thickness(0, 0, 10, 0)
         };
 
-        var root = new StackPanel();
-        card.Child = root;
+        var surface = new Canvas();
+        card.Child = surface;
 
-        var header = new Grid { Height = 58, Margin = new Thickness(0, 0, 0, 18) };
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var titlePanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        titlePanel.Children.Add(new System.Windows.Controls.Image
+        var icon = new System.Windows.Controls.Image
         {
             Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("Assets/ui/codex-icon-card.png", UriKind.Relative)),
             Width = 50,
-            Height = 50,
-            Margin = new Thickness(0, 0, 24, 0)
-        });
+            Height = 50
+        };
+        Place(surface, icon, 28, 20);
+
         row.NameBox = CreateTextBox(row.Model.Name, "程序名称", 24, true);
+        row.NameBox.Width = 260;
         row.NameBox.MinWidth = 180;
-        titlePanel.Children.Add(row.NameBox);
-        header.Children.Add(titlePanel);
+        row.NameBox.Margin = new Thickness(0);
+        Place(surface, row.NameBox, 102, 25);
 
         var statusPill = new Border
         {
             Background = Brush("#143B2B"),
             CornerRadius = new CornerRadius(15),
             Padding = new Thickness(12, 4, 12, 5),
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 20, 0)
+            VerticalAlignment = VerticalAlignment.Center
         };
         row.StatusText = new TextBlock
         {
@@ -164,8 +157,7 @@ public partial class MainWindow : Window
             FontSize = 17
         };
         statusPill.Child = row.StatusText;
-        Grid.SetColumn(statusPill, 1);
-        header.Children.Add(statusPill);
+        Place(surface, statusPill, 1185, 30);
 
         var deleteButton = new WpfButton
         {
@@ -184,32 +176,25 @@ public partial class MainWindow : Window
             settings.Applications.Remove(row.Model);
             Render();
         };
-        Grid.SetColumn(deleteButton, 2);
-        header.Children.Add(deleteButton);
-        root.Children.Add(header);
-
-        var form = new Grid { Height = 174 };
-        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(360) });
-        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(364) });
-        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(330) });
-        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(158) });
-        form.RowDefinitions.Add(new RowDefinition { Height = new GridLength(90) });
-        form.RowDefinitions.Add(new RowDefinition { Height = new GridLength(84) });
+        Place(surface, deleteButton, 1304, 25);
 
         row.ShortcutBox = CreateTextBox(row.Model.Shortcut, "例如：Alt+Z");
+        row.ShortcutBox.Width = 330;
+        row.ShortcutBox.Margin = new Thickness(0);
         row.ShortcutBox.PreviewKeyDown += (_, e) => CaptureShortcut(row.ShortcutBox, e);
         row.ShortcutBox.PreviewTextInput += (_, e) => e.Handled = true;
         row.ShortcutBox.GotKeyboardFocus += (_, _) => row.ShortcutBox.SelectAll();
-        AddField(form, "唤起快捷键", row.ShortcutBox, 0, 0);
+        AddFixedField(surface, "唤起快捷键", row.ShortcutBox, 28, 90);
 
         row.ProcessBox = CreateProcessComboBox(row);
-        AddField(form, "进程名称", row.ProcessBox, 0, 1);
+        row.ProcessBox.Width = 315;
+        row.ProcessBox.Margin = new Thickness(0);
+        AddFixedField(surface, "进程名称", row.ProcessBox, 414, 90);
 
         row.TypeBox = new WpfComboBox
         {
+            Width = 300,
             MinHeight = 52,
-            Margin = new Thickness(0, 7, 0, 0),
             Background = Brush("#151922"),
             Foreground = Brush("#F2F2F4"),
             BorderBrush = Brush("#343B48"),
@@ -220,42 +205,41 @@ public partial class MainWindow : Window
         row.TypeBox.Items.Add("商店应用");
         row.TypeBox.SelectedIndex = row.Model.LaunchType == "shellApp" ? 1 : 0;
         row.TypeBox.SelectionChanged += (_, _) => row.TargetLabel.Text = row.TypeBox.SelectedIndex == 0 ? "程序路径" : "应用 ID";
-        AddField(form, "程序类型", row.TypeBox, 0, 2);
+        AddFixedField(surface, "程序类型", row.TypeBox, 777, 90);
 
         row.TargetLabel = new TextBlock { Text = row.Model.LaunchType == "shellApp" ? "应用 ID" : "程序路径", Foreground = Brush("#B8C0CC"), FontSize = 18 };
         row.TargetBox = CreateTextBox(row.Model.LaunchTarget, "");
-        var targetPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 0) };
-        targetPanel.Children.Add(row.TargetLabel);
-        var targetGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
-        targetGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        targetGrid.Children.Add(row.TargetBox);
-        targetPanel.Children.Add(targetGrid);
-        Grid.SetRow(targetPanel, 1);
-        Grid.SetColumnSpan(targetPanel, 3);
-        form.Children.Add(targetPanel);
+        row.TargetBox.Width = 1049;
+        row.TargetBox.Margin = new Thickness(0);
+        Place(surface, row.TargetLabel, 28, 187);
+        Place(surface, row.TargetBox, 28, 216);
 
-        var actionPanel = new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(16, 28, 0, 0)
-        };
-        var browseButton = new WpfButton { Content = "选择程序", Height = 52, Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 0, 20) };
+        var browseButton = new WpfButton { Content = "选择程序", Width = 142, Height = 52, Padding = new Thickness(12, 8, 12, 8) };
         browseButton.Click += (_, _) => BrowseExecutable(row);
-        actionPanel.Children.Add(browseButton);
-        var testButton = new WpfButton { Content = "测试切换", Height = 52, Padding = new Thickness(12, 8, 12, 8) };
+        Place(surface, browseButton, 1167, 118);
+        var testButton = new WpfButton { Content = "测试切换", Width = 142, Height = 52, Padding = new Thickness(12, 8, 12, 8) };
         testButton.Click += (_, _) =>
         {
             ApplyRow(row);
             ShowNotice(WindowSwitcher.Toggle(row.Model));
         };
-        actionPanel.Children.Add(testButton);
-        Grid.SetColumn(actionPanel, 4);
-        Grid.SetRowSpan(actionPanel, 2);
-        form.Children.Add(actionPanel);
-
-        root.Children.Add(form);
+        Place(surface, testButton, 1167, 190);
 
         return card;
+    }
+
+    private static void AddFixedField(Canvas surface, string label, FrameworkElement control, double left, double top)
+    {
+        var text = new TextBlock { Text = label, Foreground = Brush("#B8C0CC"), FontSize = 18 };
+        Place(surface, text, left, top);
+        Place(surface, control, left, top + 29);
+    }
+
+    private static void Place(Canvas surface, UIElement element, double left, double top)
+    {
+        Canvas.SetLeft(element, left);
+        Canvas.SetTop(element, top);
+        surface.Children.Add(element);
     }
 
     private static WpfTextBox CreateTextBox(string text, string placeholder, double fontSize = 15, bool nameStyle = false)

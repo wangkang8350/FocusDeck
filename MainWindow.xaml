@@ -251,6 +251,41 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style TargetType="Thumb">
+            <Setter Property="Background" Value="#364252" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Background" Value="#111925" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Margin="1,0" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Border Background="#070B12" BorderBrush="#2B3542" BorderThickness="1" CornerRadius="12" ClipToBounds="True">
@@ -298,7 +333,12 @@
                         <TextBlock Text="按下快捷键切换到程序窗口；窗口已在前台时再次按下会最小化。" Foreground="#B8C0CC" FontSize="19" Margin="0,8,0,0" />
                     </StackPanel>
                     <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,28,48,0" Width="158" Height="55" Content="添加程序    +" Click="AddApplication_Click" Style="{StaticResource PrimaryButtonStyle}" />
-                    <StackPanel x:Name="ApplicationsPanel" Margin="36,106,42,0" />
+                    <ScrollViewer Margin="36,106,32,14"
+                                  Height="299"
+                                  VerticalScrollBarVisibility="Visible"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="ApplicationsPanel" />
+                    </ScrollViewer>
                 </Grid>
             </Border>
 
