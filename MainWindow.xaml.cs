@@ -118,12 +118,12 @@ public partial class MainWindow : Window
     {
         var card = new Border
         {
-            Background = Brush("#2B2B2B"),
-            BorderBrush = Brush("#353535"),
+            Background = Brush("#20242C"),
+            BorderBrush = Brush("#303642"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(9),
-            Padding = new Thickness(20),
-            Margin = new Thickness(0, 0, 0, 16)
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(24),
+            Margin = new Thickness(0, 0, 0, 18)
         };
 
         var root = new StackPanel();
@@ -148,7 +148,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(row.StatusText, 1);
         header.Children.Add(row.StatusText);
 
-        var deleteButton = new WpfButton { Content = "删除", Background = WpfBrushes.Transparent, Foreground = Brush("#BABAC0"), BorderBrush = WpfBrushes.Transparent, Padding = new Thickness(10, 6, 10, 6), MinHeight = 32 };
+        var deleteButton = new WpfButton { Content = "删除", Background = WpfBrushes.Transparent, Foreground = Brush("#AEB6C2"), BorderBrush = WpfBrushes.Transparent, Padding = new Thickness(10, 6, 10, 6), MinHeight = 32 };
         deleteButton.Click += (_, _) =>
         {
             settings.Applications.Remove(row.Model);
@@ -178,9 +178,9 @@ public partial class MainWindow : Window
         {
             MinHeight = 44,
             Margin = new Thickness(8, 7, 0, 0),
-            Background = Brush("#383838"),
+            Background = Brush("#151922"),
             Foreground = Brush("#F2F2F4"),
-            BorderBrush = Brush("#424242"),
+            BorderBrush = Brush("#343B48"),
             Padding = new Thickness(12, 8, 34, 8),
             FontSize = 15
         };
@@ -234,8 +234,8 @@ public partial class MainWindow : Window
             MinHeight = nameStyle ? 36 : 44,
             FontSize = fontSize,
             FontWeight = nameStyle ? FontWeights.SemiBold : FontWeights.Normal,
-            Background = nameStyle ? WpfBrushes.Transparent : Brush("#383838"),
-            BorderBrush = nameStyle ? WpfBrushes.Transparent : Brush("#424242"),
+            Background = nameStyle ? WpfBrushes.Transparent : Brush("#151922"),
+            BorderBrush = nameStyle ? WpfBrushes.Transparent : Brush("#343B48"),
             Foreground = Brush("#F2F2F4"),
             Padding = new Thickness(12, 8, 12, 8),
             Margin = new Thickness(0, 7, 8, 0)
@@ -253,9 +253,9 @@ public partial class MainWindow : Window
             ToolTip = "选择当前正在运行的窗口，或手动输入进程名",
             MinHeight = 44,
             FontSize = 15,
-            Background = Brush("#383838"),
+            Background = Brush("#151922"),
             Foreground = Brush("#F2F2F4"),
-            BorderBrush = Brush("#424242"),
+            BorderBrush = Brush("#343B48"),
             Padding = new Thickness(12, 8, 34, 8),
             Margin = new Thickness(8, 7, 8, 0)
         };
@@ -360,7 +360,7 @@ public partial class MainWindow : Window
     private static void AddField(Grid form, string label, FrameworkElement control, int row, int column)
     {
         var panel = new StackPanel { Margin = new Thickness(column == 0 ? 0 : 8, 0, 0, 0) };
-        panel.Children.Add(new TextBlock { Text = label, Foreground = Brush("#C2C2C6"), FontSize = 14 });
+        panel.Children.Add(new TextBlock { Text = label, Foreground = Brush("#AEB6C2"), FontSize = 14 });
         panel.Children.Add(control);
         Grid.SetRow(panel, row);
         Grid.SetColumn(panel, column);
