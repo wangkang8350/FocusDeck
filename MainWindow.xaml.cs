@@ -118,37 +118,65 @@ public partial class MainWindow : Window
     {
         var card = new Border
         {
-            Background = Brush("#20242C"),
-            BorderBrush = Brush("#303642"),
+            Background = Brush("#D9141A22"),
+            BorderBrush = Brush("#2B3542"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(24),
-            Margin = new Thickness(0, 0, 0, 18)
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(24, 18, 24, 16),
+            Margin = new Thickness(28, 0, 16, 0)
         };
 
         var root = new StackPanel();
         card.Child = root;
 
-        var header = new Grid { Margin = new Thickness(0, 0, 0, 18) };
+        var header = new Grid { Margin = new Thickness(0, 0, 0, 16) };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        row.NameBox = CreateTextBox(row.Model.Name, "程序名称", 20, true);
-        header.Children.Add(row.NameBox);
+        var titlePanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        titlePanel.Children.Add(new System.Windows.Controls.Image
+        {
+            Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("Assets/ui/codex-icon-card.png", UriKind.Relative)),
+            Width = 42,
+            Height = 42,
+            Margin = new Thickness(0, 0, 18, 0)
+        });
+        row.NameBox = CreateTextBox(row.Model.Name, "程序名称", 21, true);
+        row.NameBox.MinWidth = 180;
+        titlePanel.Children.Add(row.NameBox);
+        header.Children.Add(titlePanel);
 
+        var statusPill = new Border
+        {
+            Background = Brush("#143B2B"),
+            CornerRadius = new CornerRadius(15),
+            Padding = new Thickness(12, 4, 12, 5),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 20, 0)
+        };
         row.StatusText = new TextBlock
         {
             Text = "等待保存",
-            Foreground = Brush("#BBBBBB"),
-            FontSize = 14,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 16, 0)
+            Foreground = Brush("#73E070"),
+            FontSize = 15
         };
-        Grid.SetColumn(row.StatusText, 1);
-        header.Children.Add(row.StatusText);
+        statusPill.Child = row.StatusText;
+        Grid.SetColumn(statusPill, 1);
+        header.Children.Add(statusPill);
 
-        var deleteButton = new WpfButton { Content = "删除", Background = WpfBrushes.Transparent, Foreground = Brush("#AEB6C2"), BorderBrush = WpfBrushes.Transparent, Padding = new Thickness(10, 6, 10, 6), MinHeight = 32 };
+        var deleteButton = new WpfButton
+        {
+            Content = "⋮",
+            Width = 32,
+            Height = 32,
+            MinHeight = 32,
+            Padding = new Thickness(0),
+            Background = WpfBrushes.Transparent,
+            Foreground = Brush("#B8C0CC"),
+            BorderBrush = WpfBrushes.Transparent,
+            FontSize = 22
+        };
         deleteButton.Click += (_, _) =>
         {
             settings.Applications.Remove(row.Model);
@@ -158,10 +186,12 @@ public partial class MainWindow : Window
         header.Children.Add(deleteButton);
         root.Children.Add(header);
 
-        var form = new Grid { Margin = new Thickness(0, 0, 0, 18) };
-        form.ColumnDefinitions.Add(new ColumnDefinition());
-        form.ColumnDefinitions.Add(new ColumnDefinition());
-        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.3, GridUnitType.Star) });
+        var form = new Grid();
+        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(280) });
+        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(260) });
+        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(260) });
+        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(142) });
         form.RowDefinitions.Add(new RowDefinition());
         form.RowDefinitions.Add(new RowDefinition());
 
@@ -184,8 +214,8 @@ public partial class MainWindow : Window
             Padding = new Thickness(12, 8, 34, 8),
             FontSize = 15
         };
-        row.TypeBox.Items.Add("桌面程序（exe）");
-        row.TypeBox.Items.Add("商店应用（应用 ID）");
+        row.TypeBox.Items.Add("桌面程序");
+        row.TypeBox.Items.Add("商店应用");
         row.TypeBox.SelectedIndex = row.Model.LaunchType == "shellApp" ? 1 : 0;
         row.TypeBox.SelectionChanged += (_, _) => row.TargetLabel.Text = row.TypeBox.SelectedIndex == 0 ? "程序路径" : "应用 ID";
         AddField(form, "程序类型", row.TypeBox, 0, 2);
@@ -196,31 +226,32 @@ public partial class MainWindow : Window
         targetPanel.Children.Add(row.TargetLabel);
         var targetGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
         targetGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        targetGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         targetGrid.Children.Add(row.TargetBox);
-        var browseButton = new WpfButton { Content = "选择程序", Padding = new Thickness(18, 10, 18, 10), Margin = new Thickness(10, 0, 0, 0) };
-        browseButton.Click += (_, _) => BrowseExecutable(row);
-        Grid.SetColumn(browseButton, 1);
-        targetGrid.Children.Add(browseButton);
         targetPanel.Children.Add(targetGrid);
         Grid.SetRow(targetPanel, 1);
         Grid.SetColumnSpan(targetPanel, 3);
         form.Children.Add(targetPanel);
-        root.Children.Add(form);
 
-        var footer = new Grid();
-        footer.ColumnDefinitions.Add(new ColumnDefinition());
-        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        footer.Children.Add(new TextBlock { Text = "快捷键只会占用这里填写的组合键。", Foreground = Brush("#9E9EA3"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
-        var testButton = new WpfButton { Content = "测试切换", Padding = new Thickness(18, 10, 18, 10) };
+        var actionPanel = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(14, 23, 0, 0)
+        };
+        var browseButton = new WpfButton { Content = "选择程序", Height = 42, Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 0, 14) };
+        browseButton.Click += (_, _) => BrowseExecutable(row);
+        actionPanel.Children.Add(browseButton);
+        var testButton = new WpfButton { Content = "测试切换", Height = 42, Padding = new Thickness(12, 8, 12, 8) };
         testButton.Click += (_, _) =>
         {
             ApplyRow(row);
             ShowNotice(WindowSwitcher.Toggle(row.Model));
         };
-        Grid.SetColumn(testButton, 1);
-        footer.Children.Add(testButton);
-        root.Children.Add(footer);
+        actionPanel.Children.Add(testButton);
+        Grid.SetColumn(actionPanel, 4);
+        Grid.SetRowSpan(actionPanel, 2);
+        form.Children.Add(actionPanel);
+
+        root.Children.Add(form);
 
         return card;
     }
