@@ -656,10 +656,19 @@ public partial class MainWindow : Window
     private static SolidColorBrush Brush(string hex)
     {
         hex = hex.TrimStart('#');
-        var r = Convert.ToByte(hex[..2], 16);
-        var g = Convert.ToByte(hex.Substring(2, 2), 16);
-        var b = Convert.ToByte(hex.Substring(4, 2), 16);
-        return new SolidColorBrush(WpfColor.FromRgb(r, g, b));
+        if (hex.Length == 8)
+        {
+            var a = Convert.ToByte(hex[..2], 16);
+            var r = Convert.ToByte(hex.Substring(2, 2), 16);
+            var g = Convert.ToByte(hex.Substring(4, 2), 16);
+            var b = Convert.ToByte(hex.Substring(6, 2), 16);
+            return new SolidColorBrush(WpfColor.FromArgb(a, r, g, b));
+        }
+
+        var red = Convert.ToByte(hex[..2], 16);
+        var green = Convert.ToByte(hex.Substring(2, 2), 16);
+        var blue = Convert.ToByte(hex.Substring(4, 2), 16);
+        return new SolidColorBrush(WpfColor.FromRgb(red, green, blue));
     }
 
     private sealed class ApplicationRow(AppShortcut model)
