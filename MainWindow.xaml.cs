@@ -143,7 +143,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(row.StatusText, 1);
         header.Children.Add(row.StatusText);
 
-        var deleteButton = new WpfButton { Content = "删除", Background = WpfBrushes.Transparent, Foreground = Brush("#BABAC0"), BorderBrush = WpfBrushes.Transparent };
+        var deleteButton = new WpfButton { Content = "删除", Background = WpfBrushes.Transparent, Foreground = Brush("#BABAC0"), BorderBrush = WpfBrushes.Transparent, Padding = new Thickness(10, 6, 10, 6), MinHeight = 32 };
         deleteButton.Click += (_, _) =>
         {
             settings.Applications.Remove(row.Model);
@@ -166,7 +166,7 @@ public partial class MainWindow : Window
         row.ProcessBox = CreateTextBox(row.Model.ProcessName, "例如：Codex");
         AddField(form, "进程名称", row.ProcessBox, 0, 1);
 
-        row.TypeBox = new WpfComboBox { MinHeight = 44, Margin = new Thickness(8, 7, 0, 0) };
+        row.TypeBox = new WpfComboBox { MinHeight = 44, Margin = new Thickness(8, 7, 0, 0), Background = Brush("#383838"), Foreground = Brush("#F2F2F4"), BorderBrush = Brush("#424242"), Padding = new Thickness(12, 8, 12, 8) };
         row.TypeBox.Items.Add("桌面程序（exe）");
         row.TypeBox.Items.Add("商店应用（应用 ID）");
         row.TypeBox.SelectedIndex = row.Model.LaunchType == "shellApp" ? 1 : 0;
@@ -368,6 +368,21 @@ public partial class MainWindow : Window
         {
             DragMove();
         }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
     }
 
     private void ShowNotice(string text)
